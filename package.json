@@ -24,7 +24,11 @@
     "gulp-webpack": "^0.4.1"
   },
   "dependencies": {
+    "babel-core": "^5.2.6",
+    "babel-loader": "^5.0.0",
+    "d3": "^3.5.5",
     "d3-grid-layout": "^0.1.0",
-    "json-loader": "^0.5.1"
+    "json-loader": "^0.5.1",
+    "webpack": "^1.8.11"
   }
 }
