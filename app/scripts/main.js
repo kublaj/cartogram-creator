@@ -1,4 +1,4 @@
-var utils = require('./utils');
+import utils from './utils';
 
 utils.addHelperClasses();
 

@@ -8,7 +8,8 @@ const mapCenter = path.centroid(geojson);
 
 var grid = {
     cells: [],
-    cellSize: 20,
+    initialCellSize: 0,
+    cellSize: 0,
     isUsed(x, y) {
         return this.cells.some(cell => (cell.x === x && cell.y === y));
     },
@@ -63,17 +64,14 @@ let nodes = geojson.features.map(el => {
     return new Node((coords[0] - mapCenter[0]) * scale, (coords[1] - mapCenter[1]) * scale);
 });
 
-var mapBounds = nodes.reduce((prev, node) => {
-    return {
-        x1: node.x < prev.x1 ? node.x : prev.x1,
-        x2: node.x > prev.x2 ? node.x : prev.x2,
-        y1: node.y < prev.y1 ? node.y : prev.y1,
-        y2: node.y > prev.y2 ? node.y : prev.y2
-    }
-}, {x1: 0, x2: 0, y1: 0, y2: 0});
+var mapBounds = nodes.reduce((prev, node) => ({
+    x1: node.x < prev.x1 ? node.x : prev.x1,
+    x2: node.x > prev.x2 ? node.x : prev.x2,
+    y1: node.y < prev.y1 ? node.y : prev.y1,
+    y2: node.y > prev.y2 ? node.y : prev.y2
+}), {x1: 0, x2: 0, y1: 0, y2: 0});
 
-console.log(mapBounds);
-grid.cellSize = Math.max(mapBounds.x2 - mapBounds.x1, mapBounds.y2 - mapBounds.y1);
+grid.cellSize = grid.initialCellSize = Math.max(mapBounds.x2 - mapBounds.x1, mapBounds.y2 - mapBounds.y1);
 
 var centralNode = nodes.reduce((bestCandidate, node) => {
     function dist(el) {
@@ -86,10 +84,7 @@ var centralNode = nodes.reduce((bestCandidate, node) => {
 }, nodes[0]);
 
 let viewBox = mapBounds.x1 + ' ' + mapBounds.y1 + ' ' + (mapBounds.x2 - mapBounds.x1) + ' ' + (mapBounds.y2 - mapBounds.y1);
-
-var svg = d3.select('body')
-    .append('svg')
-    .attr({width, height, viewBox});
+var svg = d3.select('body').append('svg').attr({width, height, viewBox});
 
 centralNode.assignCell(grid.use(0, 0));
 
@@ -112,6 +107,7 @@ function getNextNode() {
     let nodesInCells;
     let direction = 1;
     let directionChange;
+    //grid.cellSize = grid.initialCellSize;
     let step = grid.cellSize;
     do {
         nodesInCells = getNodesInCells(grid.getInterestingCells());
@@ -145,16 +141,10 @@ function drawAll() {
         .data(nodes)
         .enter()
         .append('circle')
-        .style('fill', function (d) {
-            return (d === centralNode) ? '#f00' : d.allocated ? '#00f' : '#000';
-        })
+        .style('fill', node => ((node === centralNode) ? '#f00' : node.isAssigned() ? '#00f' : '#000'))
         .attr({
-            cx: function (d) {
-                return (d.x);
-            },
-            cy: function (d) {
-                return (d.y);
-            },
+            cx: node => node.x,
+            cy: node => node.y,
             r: 5
         });
 
@@ -182,7 +172,7 @@ function drawAll() {
 }
 
 
-document.querySelector('#step').addEventListener('click', function () {
+document.querySelector('#step').addEventListener('click', () => {
     allocateAllNodes();
     drawAll();
 });
